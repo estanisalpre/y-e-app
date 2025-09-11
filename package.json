@@ -1,0 +1,24 @@
+{
+  "name": "y-e-app",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "generate-vapid": "node -e \"console.log(require('web-push').generateVAPIDKeys())\""
+  },
+  "dependencies": {
+    "@astrojs/netlify": "^6.5.10",
+    "@tailwindcss/typography": "^0.5.16",
+    "@tailwindcss/vite": "^4.1.13",
+    "astro": "^5.13.7",
+    "tailwindcss": "^4.1.13",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@types/web-push": "^3.6.4"
+  }
+}

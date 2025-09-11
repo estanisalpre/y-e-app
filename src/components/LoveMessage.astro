@@ -1,0 +1,48 @@
+---
+// Get today's message (could be from API or static)
+const messages = [
+  "Buenos días mi amor ☀️ Espero que tengas un día tan hermoso como tú",
+  "Desperté pensando en ti 💭 Eres lo mejor que me ha pasado en la vida",  
+  "Tu sonrisa es mi café de la mañana ☕ Me da energía para todo el día",
+  "Cada día contigo es una nueva aventura 🌟 Te amo más de lo que las palabras pueden expresar",
+  "Eres mi sol, mi luna y todas mis estrellas ✨ Que tengas un día maravilloso",
+  "Mi corazón late más fuerte cada vez que pienso en ti 💕 Buenos días princesa",
+  "Eres la razón por la que sonrío al despertar 😊 Te amo infinitamente"
+];
+
+// Get message based on day of year to have some consistency
+const today = new Date();
+const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+const todayMessage = messages[dayOfYear % messages.length];
+---
+
+<div class="bg-gradient-to-br from-love-400 to-love-500 text-white rounded-2xl p-6 shadow-lg relative overflow-hidden">
+  <!-- Decorative elements -->
+  <div class="absolute top-2 right-2 text-2xl opacity-20">💕</div>
+  <div class="absolute bottom-2 left-2 text-xl opacity-20">💖</div>
+  
+  <!-- Content -->
+  <div class="relative z-10">
+    <div class="text-center mb-4">
+      <div class="text-sm opacity-90 mb-1">
+        {today.toLocaleDateString('es-ES', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        })}
+      </div>
+      <h2 class="text-xl font-bold">💌 Mensaje de Hoy</h2>
+    </div>
+    
+    <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
+      <p class="text-lg leading-relaxed font-medium">
+        {todayMessage}
+      </p>
+    </div>
+    
+    <div class="text-center mt-4">
+      <p class="text-sm opacity-90">Con todo mi amor 💝</p>
+    </div>
+  </div>
+</div>

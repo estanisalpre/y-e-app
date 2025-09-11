@@ -1,0 +1,64 @@
+---
+import Layout from '../layouts/Layout.astro';
+import NotificationSetup from '../components/NotificationSetup.astro';
+import LoveMessage from '../components/LoveMessage.astro';
+---
+
+<Layout title="Love Notes 💕">
+  <main class="container mx-auto px-4 py-8 max-w-md">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="text-6xl mb-4">💕</div>
+      <h1 class="text-3xl font-bold text-love-700 mb-2">Love Notes</h1>
+      <p class="text-love-600">Mensajes de amor que llegan cada mañana</p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="space-y-6">
+      <!-- Today's Message -->
+      <LoveMessage />
+      
+      <!-- Notification Setup -->
+      <NotificationSetup />
+      
+      <!-- Info Cards -->
+      <div class="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg">
+        <h3 class="text-lg font-semibold text-love-700 mb-3">✨ ¿Cómo funciona?</h3>
+        <div class="space-y-2 text-sm text-love-600">
+          <p class="flex items-start gap-2">
+            <span class="text-love-400">1.</span>
+            Acepta las notificaciones
+          </p>
+          <p class="flex items-start gap-2">
+            <span class="text-love-400">2.</span>
+            Instala la app en tu inicio (botón "Añadir a inicio")
+          </p>
+          <p class="flex items-start gap-2">
+            <span class="text-love-400">3.</span>
+            Cada mañana recibirás un mensaje especial 🌅
+          </p>
+        </div>
+      </div>
+
+      <!-- Install Prompt -->
+      <div id="install-prompt" class="hidden bg-love-500 text-white rounded-2xl p-4 shadow-lg">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-semibold">📱 Instalar App</h3>
+            <p class="text-sm opacity-90">Para recibir notificaciones siempre</p>
+          </div>
+          <button id="install-btn" class="bg-white text-love-500 px-4 py-2 rounded-lg font-semibold hover:bg-love-50 transition-colors">
+            Instalar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center mt-12 text-love-400 text-sm">
+      <p>Hecho con 💖 especialmente para ti</p>
+    </div>
+  </main>
+
+  <script src="../scripts/notification-manager.ts"></script>
+</Layout>
