@@ -1,4 +1,4 @@
-import { Handler } from '@netlify/functions';
+import type { Handler } from '@netlify/functions';
 import * as webpush from 'web-push';
 
 interface StoredUser {

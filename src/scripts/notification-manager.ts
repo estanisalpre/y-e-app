@@ -1,4 +1,3 @@
-// Notification Manager for Love PWA
 interface NotificationState {
   permission: NotificationPermission;
   subscription: PushSubscription | null;
@@ -80,17 +79,17 @@ class LoveNotificationManager {
 
   private async subscribeToPush(): Promise<PushSubscription | null> {
     try {
-      const registration = await navigator.serviceWorker.ready;
-      
-      const subscription = await registration.pushManager.subscribe({
+        const registration = await navigator.serviceWorker.ready;
+        
+        const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey)
-      });
-      
-      return subscription;
+        applicationServerKey: Buffer.from(this.urlBase64ToUint8Array(this.vapidPublicKey))
+        });
+        
+        return subscription;
     } catch (error) {
-      console.error('Error subscribing to push:', error);
-      return null;
+        console.error('Error subscribing to push:', error);
+        return null;
     }
   }
 
