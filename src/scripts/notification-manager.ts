@@ -85,11 +85,12 @@ class LoveNotificationManager {
     try {
       const registration = await navigator.serviceWorker.ready;
 
+      // ✅ Convertir la clave VAPID correctamente sin usar Buffer
       const applicationServerKey = this.urlBase64ToUint8Array(this.vapidPublicKey);
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey, // 👈 aquí directo, sin Buffer
+        applicationServerKey: applicationServerKey as BufferSource,
       });
 
       return subscription;
@@ -164,7 +165,7 @@ class LoveNotificationManager {
     }
   }
 
-  // ✅ Función correcta para convertir la clave VAPID
+  // ✅ Función correcta para convertir la clave VAPID (sin usar Buffer)
   private urlBase64ToUint8Array(base64String: string): Uint8Array {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding)
@@ -177,7 +178,7 @@ class LoveNotificationManager {
     for (let i = 0; i < rawData.length; ++i) {
       outputArray[i] = rawData.charCodeAt(i);
     }
-    return outputArray as Uint8Array; // 👈 aseguramos tipo correcto
+    return outputArray;
   }
 
   private setupInstallPrompt(): void {
