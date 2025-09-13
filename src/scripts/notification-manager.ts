@@ -89,7 +89,7 @@ class LoveNotificationManager {
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: applicationServerKey as unknown as BufferSource 
+        applicationServerKey, // 👈 aquí directo, sin Buffer
       });
 
       return subscription;
