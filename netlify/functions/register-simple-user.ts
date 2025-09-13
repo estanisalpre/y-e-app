@@ -1,28 +1,22 @@
 import type { Handler } from '@netlify/functions';
 
-interface SubscriptionData {
-  subscription: {
-    endpoint: string;
-    keys: {
-      p256dh: string;
-      auth: string;
-    };
-  };
+interface SimpleUserData {
   userAgent: string;
   timestamp: string;
+  timezone: string;
+  notificationEnabled: boolean;
 }
 
 interface StoredUser {
   id: string;
-  subscription: any;
   userAgent: string;
   registeredAt: string;
-  lastNotification?: string;
+  timezone: string;
   isActive: boolean;
+  lastNotification?: string;
 }
 
 export const handler: Handler = async (event, context) => {
-  // Enable CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -30,7 +24,6 @@ export const handler: Handler = async (event, context) => {
     'Content-Type': 'application/json',
   };
 
-  // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -48,28 +41,28 @@ export const handler: Handler = async (event, context) => {
   }
 
   try {
-    const data: SubscriptionData = JSON.parse(event.body || '{}');
+    const data: SimpleUserData = JSON.parse(event.body || '{}');
     
-    if (!data.subscription || !data.subscription.endpoint) {
+    if (!data.userAgent || !data.timestamp) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'Invalid subscription data' }),
+        body: JSON.stringify({ error: 'Invalid user data' }),
       };
     }
 
-    // ✅ Generar ID único usando crypto API web (compatible con navegador y Node.js)
-    const userId = await generateUserId(data.subscription.endpoint);
+    // ✅ Generar ID simple sin usar Buffer - usando crypto nativo
+    const userId = await generateSimpleUserId(data.userAgent + data.timestamp);
     
     const user: StoredUser = {
       id: userId,
-      subscription: data.subscription,
       userAgent: data.userAgent,
       registeredAt: data.timestamp,
+      timezone: data.timezone,
       isActive: true,
     };
 
-    // Store user data
+    // Guardar usuario (implementar según tu preferencia de storage)
     const existingUsers = await getUsersFromStorage();
     const userIndex = existingUsers.findIndex(u => u.id === userId);
     
@@ -81,73 +74,78 @@ export const handler: Handler = async (event, context) => {
     
     await saveUsersToStorage(existingUsers);
 
+    console.log('✅ Usuario registrado:', userId);
+
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
         success: true,
-        message: 'User registered successfully',
+        message: 'Usuario registrado exitosamente',
         userId: userId,
       }),
     };
 
   } catch (error) {
-    console.error('Error registering user:', error);
+    console.error('❌ Error registering user:', error);
     
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Error interno del servidor',
+        message: error instanceof Error ? error.message : 'Error desconocido',
       }),
     };
   }
 };
 
-// ✅ Función para generar ID único usando Web Crypto API
-async function generateUserId(endpoint: string): Promise<string> {
-  // Convertir string a ArrayBuffer
+// ✅ Función para generar ID usando Web Crypto API (compatible en Node.js y navegador)
+async function generateSimpleUserId(input: string): Promise<string> {
+  // Crear encoder para convertir string a bytes
   const encoder = new TextEncoder();
-  const data = encoder.encode(endpoint);
+  const data = encoder.encode(input);
   
   // Crear hash usando Web Crypto API
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   
-  // Convertir a string base64
+  // Convertir a array de bytes
   const hashArray = new Uint8Array(hashBuffer);
-  const hashBase64 = btoa(String.fromCharCode(...hashArray));
   
-  // Tomar los primeros 16 caracteres para el ID
-  return hashBase64.slice(0, 16).replace(/[+/=]/g, '');
+  // Convertir a string hexadecimal
+  const hashHex = Array.from(hashArray)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  
+  // Tomar los primeros 16 caracteres
+  return hashHex.substring(0, 16);
 }
 
-// Helper functions for storage
+// Helper functions para storage
 async function getUsersFromStorage(): Promise<StoredUser[]> {
   try {
-    // In a real app, this would be a database query
-    // For demo purposes, we'll return empty array
-    // You could use Netlify Blobs, Fauna, or any other storage solution
+    // Aquí implementarías tu storage preferido:
+    // - Variables de entorno (para pocos usuarios)
+    // - Netlify Blobs
+    // - Base de datos externa (Supabase, FaunaDB, etc.)
+    
+    // Por ahora retornamos array vacío
     return [];
   } catch (error) {
-    console.error('Error getting users from storage:', error);
+    console.error('Error getting users:', error);
     return [];
   }
 }
 
 async function saveUsersToStorage(users: StoredUser[]): Promise<void> {
   try {
-    // In a real app, this would save to a database
-    // For demo purposes, we'll just log it
-    console.log('Saving users:', users.length);
+    // Aquí guardarías en tu storage preferido
+    console.log(`💾 Guardando ${users.length} usuarios`);
     
-    // You could implement storage using:
-    // - Netlify Blobs
-    // - FaunaDB
-    // - Supabase
-    // - Any other database service
+    // Ejemplo: guardar en variable de entorno (solo para testing)
+    // En producción usarías una base de datos real
     
   } catch (error) {
-    console.error('Error saving users to storage:', error);
+    console.error('Error saving users:', error);
   }
 }

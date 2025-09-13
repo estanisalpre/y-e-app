@@ -1,15 +1,28 @@
 interface NotificationState {
   permission: NotificationPermission;
-  subscription: PushSubscription | null;
+  isScheduled: boolean;
 }
 
-class LoveNotificationManager {
-  private vapidPublicKey =
-    "BO9j1Xv2Fzlrg4enrPfKSU2_yka7mbuPdQ-k_ZByosqMcNNzI4SFZh4aeHSSDYZXKnI_IrQ7Ii2RARVpPP8LEBo";
+class SimpleLoveNotificationManager {
+  private messages = [
+    { id: 1, message: "Buen día mi amor! Espero hayas dormido muy bien ❤️" },
+    { id: 2, message: "Eres el amor de mi vida 💕" },
+    { id: 3, message: "Si hoy me despierto un poco mal, no te preocupes... igual te amo 🌹" },
+    { id: 4, message: "No me alcanzarían las palabras para describir cuan hermosa eres. 💕" },
+    { id: 5, message: "A donde sea que vayas, voy contigo. Te amo" },
+    { id: 6, message: "Perdón por tantas cosas, me haces un mejor hombre cada día." },
+    { id: 7, message: "Hola amor! Te amo inmensamente. 💖" },
+    { id: 8, message: "Ey! Muy buenos días. Gracias por elegirme. Eres grandiosa." },
+    { id: 9, message: "Buen día! Te amo más allá de las palabras. 💕" },
+    { id: 10, message: "Que tengas un lindo día, recuerda que tu sonrisa es una obra de arte." }
+  ];
+
+  private intervalId: number | null = null;
 
   constructor() {
     this.initializeUI();
     this.checkCurrentState();
+    this.startNotificationCheck();
   }
 
   private initializeUI(): void {
@@ -19,25 +32,20 @@ class LoveNotificationManager {
     enableBtn?.addEventListener("click", () => this.enableNotifications());
     retryBtn?.addEventListener("click", () => this.enableNotifications());
 
-    // Install prompt
     this.setupInstallPrompt();
   }
 
   private async checkCurrentState(): Promise<void> {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      this.showState("error", "Tu navegador no soporta notificaciones push");
+    if (!("Notification" in window)) {
+      this.showState("error", "Tu navegador no soporta notificaciones");
       return;
     }
 
     const permission = Notification.permission;
+    const isScheduled = localStorage.getItem('love-notifications-enabled') === 'true';
 
-    if (permission === "granted") {
-      const subscription = await this.getSubscription();
-      if (subscription) {
-        this.showState("success");
-      } else {
-        this.showState("default");
-      }
+    if (permission === "granted" && isScheduled) {
+      this.showState("success");
     } else if (permission === "denied") {
       this.showState("blocked");
     } else {
@@ -58,19 +66,15 @@ class LoveNotificationManager {
       }
 
       if (permission === "granted") {
-        // Register push subscription
-        const subscription = await this.subscribeToPush();
-
-        if (subscription) {
-          // Send subscription to backend
-          await this.registerSubscription(subscription);
-          this.showState("success");
-
-          // Show a test notification
-          this.showTestNotification();
-        } else {
-          throw new Error("No se pudo crear la suscripción");
-        }
+        // ✅ Guardar preferencia en localStorage (funciona en navegador)
+        localStorage.setItem('love-notifications-enabled', 'true');
+        localStorage.setItem('love-notifications-start-date', new Date().toISOString());
+        
+        // Registrar usuario en el backend
+        await this.registerUser();
+        
+        this.showState("success");
+        this.showTestNotification();
       }
     } catch (error) {
       console.error("Error enabling notifications:", error);
@@ -81,52 +85,100 @@ class LoveNotificationManager {
     }
   }
 
-  private async subscribeToPush(): Promise<PushSubscription | null> {
+  private async registerUser(): Promise<void> {
     try {
-      const registration = await navigator.serviceWorker.ready;
-
-      // ✅ Convertir la clave VAPID correctamente sin usar Buffer
-      const applicationServerKey = this.urlBase64ToUint8Array(this.vapidPublicKey);
-
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: applicationServerKey as BufferSource,
-      });
-
-      return subscription;
-    } catch (error) {
-      console.error("Error subscribing to push:", error);
-      return null;
-    }
-  }
-
-  private async getSubscription(): Promise<PushSubscription | null> {
-    try {
-      const registration = await navigator.serviceWorker.ready;
-      return await registration.pushManager.getSubscription();
-    } catch (error) {
-      console.error("Error getting subscription:", error);
-      return null;
-    }
-  }
-
-  private async registerSubscription(
-    subscription: PushSubscription
-  ): Promise<void> {
-    const response = await fetch("/.netlify/functions/register-user", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        subscription,
+      const userData = {
         userAgent: navigator.userAgent,
         timestamp: new Date().toISOString(),
-      }),
-    });
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        notificationEnabled: true
+      };
 
-    if (!response.ok) {
-      throw new Error("Error registrando la suscripción");
+      const response = await fetch("/.netlify/functions/register-simple-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error registrando usuario");
+      }
+
+      console.log("Usuario registrado exitosamente");
+    } catch (error) {
+      console.error("Error registering user:", error);
+      // No lanzar error, las notificaciones locales pueden seguir funcionando
+    }
+  }
+
+  private getTodaysMessage(): string {
+    const today = new Date();
+    const dayOfYear = Math.floor(
+      (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) /
+      (1000 * 60 * 60 * 24)
+    );
+    const messageIndex = dayOfYear % this.messages.length;
+    return this.messages[messageIndex].message;
+  }
+
+  private startNotificationCheck(): void {
+    // Verificar cada minuto si es hora de enviar notificación
+    this.intervalId = window.setInterval(() => {
+      this.checkForMorningNotification();
+    }, 60000); // Cada minuto
+
+    // También verificar inmediatamente
+    this.checkForMorningNotification();
+  }
+
+  private checkForMorningNotification(): void {
+    const isEnabled = localStorage.getItem('love-notifications-enabled') === 'true';
+    
+    if (!isEnabled || Notification.permission !== 'granted') {
+      return;
+    }
+
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    const targetTime = 9 * 60; // 9:00 AM
+    
+    // Verificar si es 9:00 AM (con margen de 1 minuto)
+    if (Math.abs(currentTime - targetTime) <= 1) {
+      const today = now.toDateString();
+      const lastNotification = localStorage.getItem('last-notification-date');
+      
+      // Solo enviar si no se ha enviado hoy
+      if (lastNotification !== today) {
+        this.sendMorningNotification();
+        localStorage.setItem('last-notification-date', today);
+      }
+    }
+  }
+
+  private sendMorningNotification(): void {
+    if (Notification.permission === 'granted') {
+      const message = this.getTodaysMessage();
+      
+      const notification = new Notification("💕 Buenos días mi amor!", {
+        body: message,
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
+        tag: "morning-love-message",
+        requireInteraction: false
+      });
+
+      // Auto cerrar después de 10 segundos
+      setTimeout(() => {
+        notification.close();
+      }, 10000);
+
+      // Manejar click en la notificación
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
     }
   }
 
@@ -134,19 +186,16 @@ class LoveNotificationManager {
     state: "default" | "loading" | "success" | "error" | "blocked",
     message?: string
   ): void {
-    // Hide all states
     const states = ["default", "loading", "success", "error", "blocked"];
     states.forEach((s) => {
       const element = document.getElementById(`notification-${s}`);
       if (element) element.classList.add("hidden");
     });
 
-    // Show current state
     const currentState = document.getElementById(`notification-${state}`);
     if (currentState) {
       currentState.classList.remove("hidden");
 
-      // Update error message if provided
       if (state === "error" && message) {
         const errorMessage = document.getElementById("error-message");
         if (errorMessage) errorMessage.textContent = message;
@@ -157,28 +206,12 @@ class LoveNotificationManager {
   private showTestNotification(): void {
     if (Notification.permission === "granted") {
       new Notification("💕 ¡Notificaciones activadas!", {
-        body: "A partir de mañana recibirás mensajes hermosos cada día",
+        body: "A partir de mañana recibirás mensajes hermosos cada día a las 9:00 AM",
         icon: "/icon-192.png",
         badge: "/icon-192.png",
         tag: "test-notification",
       });
     }
-  }
-
-  // ✅ Función correcta para convertir la clave VAPID (sin usar Buffer)
-  private urlBase64ToUint8Array(base64String: string): Uint8Array {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-      .replace(/-/g, '+')
-      .replace(/_/g, '/');
-
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
   }
 
   private setupInstallPrompt(): void {
@@ -206,15 +239,22 @@ class LoveNotificationManager {
       });
     });
 
-    // Hide install prompt if already installed
     window.addEventListener("appinstalled", () => {
       const installPrompt = document.getElementById("install-prompt");
       if (installPrompt) installPrompt.classList.add("hidden");
     });
   }
+
+  // Limpiar interval cuando sea necesario
+  public destroy(): void {
+    if (this.intervalId) {
+      window.clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+  }
 }
 
 // Initialize when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-  new LoveNotificationManager();
+  new SimpleLoveNotificationManager();
 });
