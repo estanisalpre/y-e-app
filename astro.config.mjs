@@ -8,5 +8,5 @@ export default defineConfig({
   },
   output: 'server',
   adapter: netlify(),
-  site: 'https://tu-love-pwa.netlify.app'
+  site: 'https://dailylovemessage.netlify.app'
 });

@@ -72,8 +72,8 @@ class SimpleLoveNotificationManager {
 
   private saveToHistory(entry: { id: number, message: string, date: string }) {
     let history = this.getHistory();
-    history.unshift(entry); // agregar al inicio (el más nuevo)
-    if (history.length > 10) history = history.slice(0, 10); // mantener solo 10
+    history.unshift(entry);
+    if (history.length > 10) history = history.slice(0, 10); 
     localStorage.setItem("love-message-history", JSON.stringify(history));
   }
 
@@ -109,10 +109,8 @@ class SimpleLoveNotificationManager {
     const history = this.getHistory();
     const recentIds = history.map(h => h.id);
 
-    // Filtrar mensajes que no están en los últimos 10
     const available = this.messages.filter(m => !recentIds.includes(m.id));
 
-    // Si todos se usaron, resetear (para no quedarnos sin mensajes)
     const pool = available.length > 0 ? available : this.messages;
 
     return pool[Math.floor(Math.random() * pool.length)];
@@ -122,7 +120,6 @@ class SimpleLoveNotificationManager {
     try {
       this.showState("loading");
 
-      // Request permission
       const permission = await Notification.requestPermission();
 
       if (permission === "denied") {
@@ -131,11 +128,9 @@ class SimpleLoveNotificationManager {
       }
 
       if (permission === "granted") {
-        // ✅ Guardar preferencia en localStorage (funciona en navegador)
         localStorage.setItem('love-notifications-enabled', 'true');
         localStorage.setItem('love-notifications-start-date', new Date().toISOString());
         
-        // Registrar usuario en el backend
         await this.registerUser();
         
         this.showState("success");
@@ -174,7 +169,6 @@ class SimpleLoveNotificationManager {
       console.log("Usuario registrado exitosamente");
     } catch (error) {
       console.error("Error registering user:", error);
-      // No lanzar error, las notificaciones locales pueden seguir funcionando
     }
   }
 
@@ -191,7 +185,7 @@ class SimpleLoveNotificationManager {
   private startNotificationCheck(): void {
     this.intervalId = window.setInterval(() => {
       this.checkForMorningNotification();
-    }, 10000); // 10000 ms = 10 seconds verification || 60000 ms = 1 minute verification
+    }, 60000); // 10000 ms = 10 seconds verification || 60000 ms = 1 minute verification
 
     this.checkForMorningNotification();
   }
@@ -205,19 +199,19 @@ class SimpleLoveNotificationManager {
 
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
-    // const targetTime = 9 * 60; // 9:00 am
-    const targetTime = (new Date().getHours() * 60 + new Date().getMinutes()) % (24 * 60); // cada minuto
+    const targetTime = 9 * 60; // 9:00 am
+    // const targetTime = (new Date().getHours() * 60 + new Date().getMinutes()) % (24 * 60); // cada minuto
     
-    if (true) { // true for testing || Math.abs(currentTime - targetTime) <= 1 for production
+    if (Math.abs(currentTime - targetTime) <= 1) { // true for testing || Math.abs(currentTime - targetTime) <= 1 for production
       const today = now.toDateString();
       const lastNotification = localStorage.getItem('last-notification-date');
       
-      this.sendMorningNotification(); // testing: always send
+      // this.sendMorningNotification(); // testing: always send
 
-      // if (lastNotification !== today) {
-      //   this.sendMorningNotification();
-      //   localStorage.setItem('last-notification-date', today);
-      // }
+      if (lastNotification !== today) {
+        this.sendMorningNotification();
+        localStorage.setItem('last-notification-date', today);
+      }
     }
   }
 
@@ -236,7 +230,6 @@ class SimpleLoveNotificationManager {
           requireInteraction: false
         });
 
-        // Guardar en historial
         this.saveToHistory({
           id: chosen.id,
           message: chosen.message,
@@ -317,7 +310,6 @@ class SimpleLoveNotificationManager {
     });
   }
 
-  // Limpiar interval cuando sea necesario
   public destroy(): void {
     if (this.intervalId) {
       window.clearInterval(this.intervalId);
@@ -326,7 +318,6 @@ class SimpleLoveNotificationManager {
   }
 }
 
-// Initialize when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
   new SimpleLoveNotificationManager();
 });

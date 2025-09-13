@@ -51,7 +51,6 @@ export const handler: Handler = async (event, context) => {
       };
     }
 
-    // ✅ Generar ID simple sin usar Buffer - usando crypto nativo
     const userId = await generateSimpleUserId(data.userAgent + data.timestamp);
     
     const user: StoredUser = {
@@ -62,7 +61,6 @@ export const handler: Handler = async (event, context) => {
       isActive: true,
     };
 
-    // Guardar usuario (implementar según tu preferencia de storage)
     const existingUsers = await getUsersFromStorage();
     const userIndex = existingUsers.findIndex(u => u.id === userId);
     
@@ -100,36 +98,26 @@ export const handler: Handler = async (event, context) => {
   }
 };
 
-// ✅ Función para generar ID usando Web Crypto API (compatible en Node.js y navegador)
 async function generateSimpleUserId(input: string): Promise<string> {
-  // Crear encoder para convertir string a bytes
   const encoder = new TextEncoder();
   const data = encoder.encode(input);
-  
-  // Crear hash usando Web Crypto API
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  
-  // Convertir a array de bytes
   const hashArray = new Uint8Array(hashBuffer);
   
-  // Convertir a string hexadecimal
   const hashHex = Array.from(hashArray)
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
   
-  // Tomar los primeros 16 caracteres
   return hashHex.substring(0, 16);
 }
 
 // Helper functions para storage
 async function getUsersFromStorage(): Promise<StoredUser[]> {
   try {
-    // Aquí implementarías tu storage preferido:
-    // - Variables de entorno (para pocos usuarios)
-    // - Netlify Blobs
-    // - Base de datos externa (Supabase, FaunaDB, etc.)
-    
-    // Por ahora retornamos array vacío
+    // here you would implement fetching from your chosen storage solution
+    // e.g., Netlify Blobs, external database, etc.
+    // For demo purposes, return empty array
+
     return [];
   } catch (error) {
     console.error('Error getting users:', error);
@@ -139,11 +127,9 @@ async function getUsersFromStorage(): Promise<StoredUser[]> {
 
 async function saveUsersToStorage(users: StoredUser[]): Promise<void> {
   try {
-    // Aquí guardarías en tu storage preferido
     console.log(`💾 Guardando ${users.length} usuarios`);
     
-    // Ejemplo: guardar en variable de entorno (solo para testing)
-    // En producción usarías una base de datos real
+    // here you would implement saving to your chosen storage solution
     
   } catch (error) {
     console.error('Error saving users:', error);

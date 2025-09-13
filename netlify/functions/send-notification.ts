@@ -23,7 +23,6 @@ interface LoveMessage {
   emoji: string;
 }
 
-// Configure web-push with VAPID keys
 webpush.setVapidDetails(
   process.env.VAPID_EMAIL || 'mailto:your-email@gmail.com',
   process.env.VAPID_PUBLIC_KEY || '',
@@ -39,7 +38,6 @@ export const handler: Handler = async (event, context) => {
   try {
     console.log('🚀 Starting daily love notification job...');
 
-    // Get all active users
     const users = await getActiveUsers();
     console.log(`📱 Found ${users.length} active users`);
 
@@ -55,11 +53,9 @@ export const handler: Handler = async (event, context) => {
       };
     }
 
-    // Get today's love message
     const todayMessage = await getTodaysMessage();
-    console.log(`💕 Today's message: ${todayMessage.title}`);
+    //console.log(`💕 Today's message: ${todayMessage.title}`);
 
-    // Prepare notification payload
     const notificationPayload = {
       title: todayMessage.title,
       body: todayMessage.message,
@@ -84,7 +80,6 @@ export const handler: Handler = async (event, context) => {
       ]
     };
 
-    // Send notifications to all users
     let successCount = 0;
     let errorCount = 0;
 
@@ -95,20 +90,18 @@ export const handler: Handler = async (event, context) => {
           JSON.stringify(notificationPayload)
         );
         
-        // Update user's last notification timestamp
         await updateUserLastNotification(user.id, new Date().toISOString());
         
         successCount++;
-        console.log(`✅ Notification sent to user ${user.id}`);
+        //console.log(`✅ Notification sent to user ${user.id}`);
         
       } catch (error) {
         errorCount++;
         console.error(`❌ Failed to send notification to user ${user.id}:`, error);
         
-        // If subscription is no longer valid, mark user as inactive
         if (error instanceof Error && (error.message.includes('410') || error.message.includes('invalid'))) {
           await deactivateUser(user.id);
-          console.log(`🔄 Deactivated user ${user.id} due to invalid subscription`);
+          //console.log(`🔄 Deactivated user ${user.id} due to invalid subscription`);
         }
       }
     });
@@ -127,7 +120,7 @@ export const handler: Handler = async (event, context) => {
       }
     };
 
-    console.log('📊 Final stats:', result.stats);
+    //console.log('📊 Final stats:', result.stats);
 
     return {
       statusCode: 200,
@@ -197,7 +190,6 @@ async function getTodaysMessage(): Promise<LoveMessage> {
     
   } catch (error) {
     console.error('Error getting today\'s message:', error);
-    // Fallback message
     return {
       id: 0,
       title: "Te amo 💕",

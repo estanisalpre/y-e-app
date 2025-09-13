@@ -65,7 +65,6 @@ export const handler: Handler = async () => {
       { id: 50, message: "Muy buenos días! Eres una luz en mi vida." }
     ];
 
-    // Seleccionar mensaje del día basado en el día del año
     const today = new Date();
     const dayOfYear = Math.floor(
       (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) /
