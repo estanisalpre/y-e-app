@@ -164,12 +164,10 @@ class SimpleLoveNotificationManager {
   }
 
   private startNotificationCheck(): void {
-    // Verificar cada minuto si es hora de enviar notificación
     this.intervalId = window.setInterval(() => {
       this.checkForMorningNotification();
-    }, 60000); // Cada minuto
+    }, 10000); // 10000 ms = 10 seconds verification || 60000 ms = 1 minute verification
 
-    // También verificar inmediatamente
     this.checkForMorningNotification();
   }
 
@@ -182,18 +180,19 @@ class SimpleLoveNotificationManager {
 
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
-    const targetTime = new Date().getHours() * 60 + new Date().getMinutes() + 1;
+    // const targetTime = 9 * 60; // 9:00 am
+    const targetTime = (new Date().getHours() * 60 + new Date().getMinutes()) % (24 * 60); // cada minuto
     
-    // Verificar si es 9:00 AM (con margen de 1 minuto)
-    if (Math.abs(currentTime - targetTime) <= 1) {
+    if (true) { // true for testing || Math.abs(currentTime - targetTime) <= 1 for production
       const today = now.toDateString();
       const lastNotification = localStorage.getItem('last-notification-date');
       
-      // Solo enviar si no se ha enviado hoy
-      if (lastNotification !== today) {
-        this.sendMorningNotification();
-        localStorage.setItem('last-notification-date', today);
-      }
+      this.sendMorningNotification(); // testing: always send
+
+      // if (lastNotification !== today) {
+      //   this.sendMorningNotification();
+      //   localStorage.setItem('last-notification-date', today);
+      // }
     }
   }
 
