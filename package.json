@@ -20,6 +20,8 @@
   },
   "devDependencies": {
     "@netlify/functions": "^4.2.5",
-    "@types/web-push": "^3.6.4"
+    "@types/web-push": "^3.6.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
   }
 }
