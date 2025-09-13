@@ -1,1 +1,42 @@
 @import "tailwindcss";
+
+/* Paleta Love */
+.love-50  { color: #fdf2f8; }
+.love-100 { color: #fce7f3; }
+.love-200 { color: #fbcfe8; }
+.love-300 { color: #f9a8d4; }
+.love-400 { color: #f472b6; }
+.love-500 { color: #ec4899; }
+.love-600 { color: #db2777; }
+.love-700 { color: #be185d; }
+.love-800 { color: #9d174d; }
+.love-900 { color: #831843; }
+
+/* Versión para texto (como text-love-700) */
+.text-love-50  { color: #fdf2f8; }
+.text-love-100 { color: #fce7f3; }
+.text-love-200 { color: #fbcfe8; }
+.text-love-300 { color: #f9a8d4; }
+.text-love-400 { color: #f472b6; }
+.text-love-500 { color: #ec4899; }
+.text-love-600 { color: #db2777; }
+.text-love-700 { color: #be185d; }
+.text-love-800 { color: #9d174d; }
+.text-love-900 { color: #831843; }
+
+/* Versión para backgrounds (como bg-love-500) */
+.bg-love-50  { background-color: #fdf2f8; }
+.bg-love-100 { background-color: #fce7f3; }
+.bg-love-200 { background-color: #fbcfe8; }
+.bg-love-300 { background-color: #f9a8d4; }
+.bg-love-400 { background-color: #f472b6; }
+.bg-love-500 { background-color: #ec4899; }
+.bg-love-600 { background-color: #db2777; }
+.bg-love-700 { background-color: #be185d; }
+.bg-love-800 { background-color: #9d174d; }
+.bg-love-900 { background-color: #831843; }
+
+/* Fuente global */
+body {
+  font-family: 'Roboto', sans-serif;
+}

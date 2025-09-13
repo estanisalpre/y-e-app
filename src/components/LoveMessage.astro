@@ -1,91 +1,44 @@
 ---
-// Get today's message based on your personal messages
-const messages = [
-  "Buen día mi amor! Espero hayas dormido muy bien ❤️",
-  "Eres el amor de mi vida 💕",
-  "Si hoy me despierto un poco mal, no te preocupes... igual te amo 🌹",
-  "No me alcanzarían las palabras para describir cuan hermosa eres. 💕",
-  "A donde sea que vayas, voy contigo. Te amo",
-  "Perdón por tantas cosas, me haces un mejor hombre cada día.",
-  "Hola amor! Te amo inmensamente. 💖",
-  "Ey! Muy buenos días. Gracias por elegirme. Eres grandiosa.",
-  "Buen día! Te amo más allá de las palabras. 💕",
-  "Que tengas un lindo día, recuerda que tu sonrisa es una obra de arte.",
-  "Buen día! Qué buena que estás. Tu cuerpo me se vuelve loco.",
-  "Amor buenos días. Me haces muy feliz.",
-  "Buenos dias amor! Eres especial para mi.",
-  "Buenos días mujer divina! Espero poder cuidarte toda la vida, amor.",
-  "Buenos días reina! Que cumplas tus sueños. Yo te lucharé a la par contigo.",
-  "Buenos días bombom! Cuando necesites un abrazo, recuerda que siempre estoy aquí para ti.",
-  "Buenos días mi locura! Si hoy estás mal, recuerda que te amo y que todo pasará.",
-  "Buenos días princesa! Espero tengas un hermoso día mi amor.",
-  "Buenos días mi amor! Eres mi persona favorita en el mundo.",
-  "Buenos días mi vida! Gracias por ser tú.",
-  "Buen día hermosa! Gracias por hacerme tan feliz.",
-  "Buen día! Dicen que si te llega este mensaje, debes hacer el mañanero!! 💕",
-  "Buen día amor! Si estoy en la casa, ven y bésame, dale que te espero.",
-  "Buenos días! Hagamos que hoy sea un gran día juntos.",
-  "Buen día reina! ¿Cómo amaneciste hoy? Gracias por ser mi reina.",
-  "Buenos días corazón! Espero te despiertes muy bien. Te amo.",
-  "¿Quién programó esta notificación? Ah, si, yo. Buenos días y te amo.",
-  "Bueeeeeeeeeeeen día amor! Te amo con todo mi corazón.",
-  "Buenos días! Si tuvimos un día malo ayer, o hace poco, hoy lo podemos cambiar. Te amo.",
-  "Buenos días mi amor! Cada día contigo es mi regalo favorito.",
-  "Buenos días! Gracias por enseñarme lo que significa amar de verdad.",
-  "Buen día cariño! Que hoy tu sonrisa ilumine el mundo como ilumina mi vida.",
-  "Buenos días! Tú eres mi paz en el caos, mi sol en la tormenta.",
-  "Buen día mi vida! Ojalá tu día sea tan hermoso como tú.",
-  "Buenos días amor! Si pudiera elegir otra vez, te volvería a elegir a ti. 💑",
-  "Buenos días preciosa! Que tu día esté lleno de cosas bonitas, como tú.",
-  "Buen día! No olvides que eres mi orgullo y mi mayor alegría.",
-  "Buenos días corazón! Solo con pensarte ya sonrío.",
-  "Buenos días reina! No necesito café, me basta tu amor para despertar.",
-  "Buen día amor! A veces pienso cosas subidas de tono... aaaagh pero que rico pensarte así. 😏",
-  "Buenos días cariño! Hoy también quiero ser el motivo de tu sonrisa.",
-  "Buen día amor! Si la vida es un viaje, quiero recorrerlo entero contigo.",
-  "Buenos días hermosa! Gracias por existir, eres mi todo.",
-  "Buen día amorcito! Me haces sentir bien, gracias.",
-  "Buenos días! No hay mejor forma de empezar el día que recordándote lo mucho que te amo.",
-  "Buen día princesa! Ojalá hoy el universo te devuelva una parte de todo lo bueno que tú das.",
-  "Buenos días mi vida! Recuerda que siempre estoy aquí para ti, pase lo que pase.",
-  "Muy buenos días. Eres grandiosa y te amo.",
-  "Buen día mi amor! Estoy loco por ti.",
-  "Muy buenos días! Eres una luz en mi vida."
-];
+let history: { date: string; message: string }[] = [];
 
-// Get message based on day of year to have some consistency
-const today = new Date();
-const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
-const todayMessage = messages[dayOfYear % messages.length];
+if (typeof window !== "undefined") {
+  history = JSON.parse(localStorage.getItem("love-message-history") || "[]");
+}
 ---
 
 <div class="bg-gradient-to-br from-love-400 to-love-500 text-white rounded-2xl p-6 shadow-lg relative overflow-hidden">
-  <!-- Decorative elements -->
-  <div class="absolute top-2 right-2 text-2xl opacity-20">💕</div>
-  <div class="absolute bottom-2 left-2 text-xl opacity-20">💖</div>
-  
-  <!-- Content -->
-  <div class="relative z-10">
-    <div class="text-center mb-4">
-      <div class="text-sm opacity-90 mb-1">
-        {today.toLocaleDateString('es-ES', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        })}
+  <!-- today messages -->
+  {history.length > 0 && (
+    <div class="relative z-10 mb-6">
+      <div class="text-center mb-4">
+        <div class="text-sm opacity-90 mb-1">
+          {new Date(history[0].date).toLocaleDateString('es-ES', { 
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+          })}
+        </div>
+        <h2 class="text-xl font-bold">💌 Hoy</h2>
       </div>
-      <h2 class="text-xl font-bold">💌 Mensaje de Hoy</h2>
+      <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
+        <p class="text-lg leading-relaxed font-medium">
+          {history[0].message}
+        </p>
+      </div>
     </div>
-    
-    <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
-      <p class="text-lg leading-relaxed font-medium">
-        {todayMessage}
-      </p>
+  )}
+
+  <!-- last 10 messages -->
+  {history.length > 1 && (
+    <div class="bg-white/10 rounded-xl p-4">
+      <h3 class="font-semibold mb-2">💞 Esto te dedico a ti...</h3>
+      <ul class="space-y-2 text-sm">
+        {history.map((h, idx) => (
+          <li>
+            <span class="opacity-70">
+              {new Date(h.date).toLocaleDateString("es-ES")}
+            </span> — {h.message}
+          </li>
+        ))}
+      </ul>
     </div>
-    
-    <div class="text-center mt-4">
-      <p class="text-sm opacity-90">Con todo mi amor 💝</p>
-    </div>
-  </div>
+  )}
 </div>

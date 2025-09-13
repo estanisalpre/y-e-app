@@ -65,6 +65,18 @@ class SimpleLoveNotificationManager {
     this.startNotificationCheck();
   }
 
+  private getHistory(): { id: number, message: string, date: string }[] {
+    const history = localStorage.getItem("love-message-history");
+    return history ? JSON.parse(history) : [];
+  }
+
+  private saveToHistory(entry: { id: number, message: string, date: string }) {
+    let history = this.getHistory();
+    history.unshift(entry); // agregar al inicio (el más nuevo)
+    if (history.length > 10) history = history.slice(0, 10); // mantener solo 10
+    localStorage.setItem("love-message-history", JSON.stringify(history));
+  }
+
   private initializeUI(): void {
     const enableBtn = document.getElementById("enable-notifications");
     const retryBtn = document.getElementById("retry-notifications");
@@ -91,6 +103,19 @@ class SimpleLoveNotificationManager {
     } else {
       this.showState("default");
     }
+  }
+
+  private getRandomMessage(): { id: number, message: string } {
+    const history = this.getHistory();
+    const recentIds = history.map(h => h.id);
+
+    // Filtrar mensajes que no están en los últimos 10
+    const available = this.messages.filter(m => !recentIds.includes(m.id));
+
+    // Si todos se usaron, resetear (para no quedarnos sin mensajes)
+    const pool = available.length > 0 ? available : this.messages;
+
+    return pool[Math.floor(Math.random() * pool.length)];
   }
 
   private async enableNotifications(): Promise<void> {
@@ -198,17 +223,26 @@ class SimpleLoveNotificationManager {
 
   private async sendMorningNotification(): Promise<void> {
     if (Notification.permission === 'granted') {
-      const message = this.getTodaysMessage();
-      
+      const chosen = this.getRandomMessage();
+      const now = new Date();
+
       try {
         const registration = await navigator.serviceWorker.ready;
-        await registration.showNotification("", {
-          body: message,
+        await registration.showNotification("💕 Mensaje de Amor", {
+          body: chosen.message,
           icon: "/icon-192.png",
           badge: "/icon-192.png",
           tag: "morning-love-message",
           requireInteraction: false
         });
+
+        // Guardar en historial
+        this.saveToHistory({
+          id: chosen.id,
+          message: chosen.message,
+          date: now.toISOString()
+        });
+
       } catch (error) {
         console.error('Error showing notification:', error);
       }
