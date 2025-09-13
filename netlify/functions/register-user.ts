@@ -58,8 +58,8 @@ export const handler: Handler = async (event, context) => {
       };
     }
 
-    // Generate unique user ID based on endpoint
-    const userId = Buffer.from(data.subscription.endpoint).toString('base64').slice(0, 16);
+    // ✅ Generar ID único usando crypto API web (compatible con navegador y Node.js)
+    const userId = await generateUserId(data.subscription.endpoint);
     
     const user: StoredUser = {
       id: userId,
@@ -69,11 +69,7 @@ export const handler: Handler = async (event, context) => {
       isActive: true,
     };
 
-    // In a real application, you would store this in a database
-    // For now, we'll use Netlify's blob store or environment variables
-    // Since this is a simple use case, we'll store it in a way that the send function can access it
-    
-    // Store user data (you might want to use a proper database for production)
+    // Store user data
     const existingUsers = await getUsersFromStorage();
     const userIndex = existingUsers.findIndex(u => u.id === userId);
     
@@ -108,6 +104,23 @@ export const handler: Handler = async (event, context) => {
     };
   }
 };
+
+// ✅ Función para generar ID único usando Web Crypto API
+async function generateUserId(endpoint: string): Promise<string> {
+  // Convertir string a ArrayBuffer
+  const encoder = new TextEncoder();
+  const data = encoder.encode(endpoint);
+  
+  // Crear hash usando Web Crypto API
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  
+  // Convertir a string base64
+  const hashArray = new Uint8Array(hashBuffer);
+  const hashBase64 = btoa(String.fromCharCode(...hashArray));
+  
+  // Tomar los primeros 16 caracteres para el ID
+  return hashBase64.slice(0, 16).replace(/[+/=]/g, '');
+}
 
 // Helper functions for storage
 async function getUsersFromStorage(): Promise<StoredUser[]> {
