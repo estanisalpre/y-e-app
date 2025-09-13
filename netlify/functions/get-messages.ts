@@ -1,169 +1,17 @@
 import type { Handler } from '@netlify/functions';
-import * as webpush from 'web-push';
-
-interface StoredUser {
-  id: string;
-  subscription: {
-    endpoint: string;
-    keys: {
-      p256dh: string;
-      auth: string;
-    };
-  };
-  userAgent: string;
-  registeredAt: string;
-  lastNotification?: string;
-  isActive: boolean;
-}
 
 interface LoveMessage {
   id: number;
   message: string;
 }
 
-// Configure web-push with VAPID keys
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL || 'mailto:estanisprevite@hotmail.com',
-  process.env.VAPID_PUBLIC_KEY || '',
-  process.env.VAPID_PRIVATE_KEY || ''
-);
-
-export const handler: Handler = async (event, context) => {
+export const handler: Handler = async () => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Content-Type': 'application/json',
   };
 
   try {
-    console.log('🚀 Starting daily love notification job...');
-
-    // Get all active users
-    const users = await getActiveUsers();
-    console.log(`📱 Found ${users.length} active users`);
-
-    if (users.length === 0) {
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          message: 'No active users found',
-          sent: 0,
-        }),
-      };
-    }
-
-    // Get today's love message
-    const todayMessage = await getTodaysMessage();
-    console.log(`💕 Today's message: ${todayMessage.message}`);
-
-    // Prepare notification payload
-    const notificationPayload = {
-      title: '💕 Un mensaje especial para ti',
-      body: todayMessage.message,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      tag: 'daily-love-message',
-      data: {
-        url: '/',
-        messageId: todayMessage.id,
-        timestamp: new Date().toISOString(),
-      },
-      requireInteraction: false,
-      actions: [
-        {
-          action: 'open',
-          title: '💖 Ver mensaje completo'
-        },
-        {
-          action: 'close',
-          title: 'Cerrar'
-        }
-      ]
-    };
-
-    // Send notifications to all users
-    let successCount = 0;
-    let errorCount = 0;
-
-    const sendPromises = users.map(async (user) => {
-      try {
-        await webpush.sendNotification(
-          user.subscription,
-          JSON.stringify(notificationPayload)
-        );
-        
-        // Update user's last notification timestamp
-        await updateUserLastNotification(user.id, new Date().toISOString());
-        
-        successCount++;
-        console.log(`✅ Notification sent to user ${user.id}`);
-        
-      } catch (error) {
-        errorCount++;
-        console.error(`❌ Failed to send notification to user ${user.id}:`, error);
-        
-        // If subscription is no longer valid, mark user as inactive
-        if (error instanceof Error && (error.message.includes('410') || error.message.includes('invalid'))) {
-          await deactivateUser(user.id);
-          console.log(`🔄 Deactivated user ${user.id} due to invalid subscription`);
-        }
-      }
-    });
-
-    await Promise.all(sendPromises);
-
-    const result = {
-      success: true,
-      message: 'Daily love notifications sent',
-      stats: {
-        totalUsers: users.length,
-        successful: successCount,
-        failed: errorCount,
-        messageContent: todayMessage.message,
-        timestamp: new Date().toISOString(),
-      }
-    };
-
-    console.log('📊 Final stats:', result.stats);
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify(result),
-    };
-
-  } catch (error) {
-    console.error('💥 Error in send-notification function:', error);
-    
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        success: false,
-        error: 'Failed to send notifications',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      }),
-    };
-  }
-};
-
-// Helper functions
-async function getActiveUsers(): Promise<StoredUser[]> {
-  try {
-    // In a real app, this would query your database
-    // For demo purposes, return empty array
-    // You would implement this with your chosen storage solution
-    return [];
-  } catch (error) {
-    console.error('Error getting active users:', error);
-    return [];
-  }
-}
-
-async function getTodaysMessage(): Promise<LoveMessage> {
-  try {
-    // Get messages with your personal messages
     const messages: LoveMessage[] = [
       { id: 1, message: "Buen día mi amor! Espero hayas dormido muy bien ❤️" },
       { id: 2, message: "Eres el amor de mi vida 💕" },
@@ -217,37 +65,36 @@ async function getTodaysMessage(): Promise<LoveMessage> {
       { id: 50, message: "Muy buenos días! Eres una luz en mi vida." }
     ];
 
-    // Get message based on day of year for consistency
+    // Seleccionar mensaje del día basado en el día del año
     const today = new Date();
-    const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    const dayOfYear = Math.floor(
+      (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) /
+      (1000 * 60 * 60 * 24)
+    );
     const messageIndex = dayOfYear % messages.length;
 
-    return messages[messageIndex];
-    
-  } catch (error) {
-    console.error('Error getting today\'s message:', error);
-    // Fallback message
+    const todayMessage = messages[messageIndex];
+
     return {
-      id: 0,
-      message: "Te amo 💕 Buenos días mi amor, espero que tengas un día maravilloso."
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        success: true,
+        message: todayMessage,
+        allMessages: messages.length,
+      }),
+    };
+  } catch (error) {
+    console.error("Error getting messages:", error);
+
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({
+        success: false,
+        error: "Failed to get messages",
+        message: error instanceof Error ? error.message : "Unknown error",
+      }),
     };
   }
-}
-
-async function updateUserLastNotification(userId: string, timestamp: string): Promise<void> {
-  try {
-    // Update user's last notification timestamp in database
-    console.log(`Updating last notification for user ${userId}: ${timestamp}`);
-  } catch (error) {
-    console.error('Error updating user last notification:', error);
-  }
-}
-
-async function deactivateUser(userId: string): Promise<void> {
-  try {
-    // Mark user as inactive in database
-    console.log(`Deactivating user ${userId}`);
-  } catch (error) {
-    console.error('Error deactivating user:', error);
-  }
-}
+};
