@@ -197,28 +197,22 @@ class SimpleLoveNotificationManager {
     }
   }
 
-  private sendMorningNotification(): void {
+  private async sendMorningNotification(): Promise<void> {
     if (Notification.permission === 'granted') {
       const message = this.getTodaysMessage();
       
-      const notification = new Notification("💕 Buenos días mi amor!", {
-        body: message,
-        icon: "/icon-192.png",
-        badge: "/icon-192.png",
-        tag: "morning-love-message",
-        requireInteraction: false
-      });
-
-      // Auto cerrar después de 10 segundos
-      setTimeout(() => {
-        notification.close();
-      }, 10000);
-
-      // Manejar click en la notificación
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        await registration.showNotification("", {
+          body: message,
+          icon: "/icon-192.png",
+          badge: "/icon-192.png",
+          tag: "morning-love-message",
+          requireInteraction: false
+        });
+      } catch (error) {
+        console.error('Error showing notification:', error);
+      }
     }
   }
 
@@ -243,14 +237,19 @@ class SimpleLoveNotificationManager {
     }
   }
 
-  private showTestNotification(): void {
+  private async showTestNotification(): Promise<void> {
     if (Notification.permission === "granted") {
-      new Notification("💕 ¡Notificaciones activadas!", {
-        body: "A partir de mañana recibirás mensajes hermosos cada día a las 9:00 AM",
-        icon: "/icon-192.png",
-        badge: "/icon-192.png",
-        tag: "test-notification",
-      });
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        await registration.showNotification("💕 ¡Notificaciones activadas!", {
+          body: "Recibirás mensajes hermosos cada día a las 09:00 am",
+          icon: "/icon-192.png",
+          badge: "/icon-192.png",
+          tag: "test-notification",
+        });
+      } catch (error) {
+        console.error('Error showing test notification:', error);
+      }
     }
   }
 
